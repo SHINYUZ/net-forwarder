@@ -33,7 +33,7 @@
 
 - **操作系统**：CentOS 7+ / Debian 10+ / Ubuntu 20+
 - **架构**：x86_64 / aarch64 (ARM64)
-- **权限**：Root 用户
+- **权限**：root 用户
 
 ---
 
@@ -98,3 +98,4 @@ Copyright (c) 2025 Shinyuz
 ---
 
 **如果这个脚本对你有帮助，请给一个 ⭐ Star！**
+
