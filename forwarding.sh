@@ -11,13 +11,13 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 PLAIN='\033[0m'
-BLUE='\033[0;36m'
+BLUE='\033[0;36m' 
 
 # 路径定义
 REALM_PATH="/usr/local/bin/realm"
 REALM_CONFIG="/etc/realm/config.toml"
 REALM_SERVICE="/etc/systemd/system/realm.service"
-REMARK_FILE="/etc/realm/remarks.txt"
+REMARK_FILE="/etc/realm/remarks.txt" 
 SCRIPT_PATH=$(readlink -f "$0")
 
 check_root() {
@@ -769,9 +769,9 @@ uninstall_all() {
     echo ""
     echo -e "${RED}警告：此操作将执行以下所有动作：${PLAIN}"
     echo ""
-    echo "1. 卸载 realm (删除文件、配置、备注和服务)"
+    echo "1. 卸载 Realm (删除文件、配置、备注和服务)"
     echo ""
-    echo "2. 清空 iptables 转发规则"
+    echo "2. 清空 Iptables 转发规则"
     echo ""
     echo "3. 删除本脚本及 'zf' 快捷键"
     echo ""
