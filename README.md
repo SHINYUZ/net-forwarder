@@ -40,6 +40,7 @@
 
 ```bash
 wget -N --no-check-certificate [https://raw.githubusercontent.com/Shinyuz/net-forwarder/main/forwarding.sh](https://raw.githubusercontent.com/Shinyuz/net-forwarder/main/forwarding.sh) && chmod +x forwarding.sh && ./forwarding.sh
+
 (如果下载失败，请检查 VPS 的网络连接或 DNS 设置)📖 使用指南安装完成后，你可以通过以下命令随时打开管理菜单：Bashzf
 🖼️ 界面预览脚本拥有精心设计的 UI 界面，状态一目了然：Plaintext===================================================
 ========= 转发脚本 Script v1.0 By Shinyuz =========
@@ -70,3 +71,4 @@ wget -N --no-check-certificate [https://raw.githubusercontent.com/Shinyuz/net-fo
  9. 卸载
  0. 退出脚本
 📂 目录结构说明对于高级用户，你可能需要了解相关配置文件的位置：组件路径说明realm 主程序/usr/local/bin/realm二进制执行文件realm 配置文件/etc/realm/config.toml存储转发规则realm 服务/etc/systemd/system/realm.serviceSystemd 守护进程脚本快捷方式/usr/bin/zf快捷启动指令⚠️ 免责声明本脚本仅供学习交流使用，请勿用于非法用途。使用本脚本造成的任何损失（包括但不限于数据丢失、服务器被封锁等），作者不承担任何责任。请遵守当地法律法规。📄 开源协议本项目遵循 MIT License 协议开源。Copyright (c) 2025 Shinyuz如果这个脚本对你有帮助，请给一个 ⭐ Star！
+
