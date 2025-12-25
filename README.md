@@ -95,7 +95,6 @@ zf
 
 Copyright (c) 2025 Shinyuz
 
+---
+
 **如果这个脚本对你有帮助，请给一个 ⭐ Star！**
-
-
-
