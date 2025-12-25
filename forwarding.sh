@@ -1,8 +1,9 @@
 #!/bin/bash
 
 # ====================================================
-#  转发脚本 Script v1.0 By Shinyuz
+#  转发脚本 Script v1.8 By Shinyuz
 #  快捷键: zf
+#  更新内容: 移除冗余注释，代码纯净版
 # ====================================================
 
 # 颜色定义
@@ -10,14 +11,15 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 PLAIN='\033[0m'
+BLUE='\033[0;36m' 
 
 # 路径定义
 REALM_PATH="/usr/local/bin/realm"
 REALM_CONFIG="/etc/realm/config.toml"
 REALM_SERVICE="/etc/systemd/system/realm.service"
+REMARK_FILE="/etc/realm/remarks.txt" 
 SCRIPT_PATH=$(readlink -f "$0")
 
-# 检查 Root 权限
 check_root() {
     if [ "$EUID" -ne 0 ]; then
         echo -e "\n${RED}错误：请使用 root 用户运行此脚本！${PLAIN}\n"
@@ -25,7 +27,6 @@ check_root() {
     fi
 }
 
-# 检查系统架构
 check_arch() {
     ARCH=$(uname -m)
     case $ARCH in
@@ -35,7 +36,6 @@ check_arch() {
     esac
 }
 
-# 设置快捷键 zf
 set_shortcut() {
     if [ ! -f "/usr/bin/zf" ]; then
         ln -sf "$SCRIPT_PATH" /usr/bin/zf
@@ -44,23 +44,19 @@ set_shortcut() {
     fi
 }
 
-# 开启 IP 转发
 enable_forwarding() {
     echo "net.ipv4.ip_forward = 1" > /etc/sysctl.d/ip_forward.conf
     echo "net.ipv6.conf.all.forwarding = 1" >> /etc/sysctl.d/ip_forward.conf
     sysctl -p /etc/sysctl.d/ip_forward.conf >/dev/null 2>&1
 }
 
-# 状态检测函数
 check_status() {
-    # Check Realm
     if systemctl is-active --quiet realm; then
         realm_status="${GREEN}running${PLAIN}"
     else
         realm_status="${RED}stopped${PLAIN}"
     fi
 
-    # Check Iptables
     if lsmod | grep -q "ip_tables" || iptables -L >/dev/null 2>&1; then
         iptables_status="${GREEN}running${PLAIN}"
     else
@@ -68,15 +64,45 @@ check_status() {
     fi
 }
 
-# 更新脚本
 update_script() {
     echo -e "\n${YELLOW}正在检查更新...${PLAIN}"
-    echo -e "${GREEN}当前已是最新版本 v1.0${PLAIN}"
+    echo -e "${GREEN}当前版本 v1.8 (纯净版)${PLAIN}"
     echo ""
     read -p "按回车键继续..."
 }
 
-# ==================== realm 功能模块 ====================
+init_remark_file() {
+    mkdir -p /etc/realm
+    if [ ! -f "$REMARK_FILE" ]; then
+        touch "$REMARK_FILE"
+    fi
+}
+
+get_realm_remark() {
+    local port=$1
+    local content=$(grep "^$port|" "$REMARK_FILE" | cut -d'|' -f2)
+    if [ -z "$content" ]; then
+        echo "无"
+    else
+        echo "$content"
+    fi
+}
+
+set_realm_remark() {
+    local port=$1
+    local content=$2
+    init_remark_file
+    sed -i "/^$port|/d" "$REMARK_FILE"
+    if [ -n "$content" ]; then
+        echo "$port|$content" >> "$REMARK_FILE"
+    fi
+}
+
+del_realm_remark() {
+    local port=$1
+    init_remark_file
+    sed -i "/^$port|/d" "$REMARK_FILE"
+}
 
 install_realm() {
     check_arch
@@ -108,21 +134,42 @@ install_realm() {
     
     mkdir -p /etc/realm
     if [ ! -f "$REALM_CONFIG" ]; then
-        > $REALM_CONFIG 
+        cat > $REALM_CONFIG <<EOF
+[dns]
+mode = "ipv4_and_ipv6"
+protocol = "tcp_and_udp"
+nameservers = ["1.1.1.1:53", "1.0.0.1:53"]
+min_ttl = 600
+max_ttl = 3600
+cache_size = 256
+
+[network]
+use_udp = true
+zero_copy = true
+fast_open = false
+tcp_timeout = 300
+udp_timeout = 30
+send_proxy = false
+send_proxy_version = 2
+accept_proxy = false
+accept_proxy_timeout = 5
+
+EOF
     fi
+    init_remark_file
 
     cat > $REALM_SERVICE <<EOF
 [Unit]
 Description=realm Forwarding Service
 After=network-online.target
-Wants=network-online.target
+Wants=network-online.target systemd-networkd-wait-online.service
 
 [Service]
 Type=simple
 User=root
 ExecStart=$REALM_PATH -c $REALM_CONFIG
-Restart=always
-RestartSec=3
+Restart=on-failure
+RestartSec=5s
 
 [Install]
 WantedBy=multi-user.target
@@ -140,23 +187,22 @@ add_realm_rule() {
 
     read -p "请输入本地监听端口: " lport
     echo ""
-    
-    # 修改：提示语增加“域名”
     read -p "请输入目标 IP/域名: " rip
     echo ""
-    
     read -p "请输入目标端口: " rport
+    echo ""
+    read -p "请输入备注名称: " remarks
     echo ""
     
     echo "请选择转发协议:"
     echo ""
-    echo "1. TCP + UDP (默认)"
+    echo "1. TCP + UDP"
     echo ""
     echo "2. 仅 TCP"
     echo ""
     echo "3. 仅 UDP"
     echo ""
-    read -p "请输入选项 [1-3]: " net_choice
+    read -p "请输入选项 [1-3 回车默认1]: " net_choice
     echo ""
 
     if [[ -z "$lport" || -z "$rip" || -z "$rport" ]]; then
@@ -164,6 +210,10 @@ add_realm_rule() {
         return
     fi
 
+    if [ ! -s "$REALM_CONFIG" ] || ! grep -q "\[network\]" "$REALM_CONFIG"; then
+        rebuild_realm_config
+    fi
+    
     config_block="[[endpoints]]\nlisten = \"[::]:$lport\"\nremote = \"$rip:$rport\""
     
     case "$net_choice" in
@@ -182,6 +232,10 @@ add_realm_rule() {
     esac
 
     echo -e "$config_block" >> $REALM_CONFIG
+    
+    if [ -n "$remarks" ]; then
+        set_realm_remark "$lport" "$remarks"
+    fi
     
     systemctl restart realm
     
@@ -246,6 +300,7 @@ get_realm_rules() {
 
 show_realm_list() {
     get_realm_rules
+    init_remark_file
     if [ ${#r_lport[@]} -eq 0 ]; then
         echo -e "${YELLOW}目前没有任何规则。${PLAIN}"
         return 1
@@ -256,11 +311,15 @@ show_realm_list() {
     for ((i=0; i<${#r_lport[@]}; i++)); do
         p_show="${r_proto[$i]}"
         if [[ "$p_show" == "tcp+udp" ]]; then
-            p_str="TCP+UDP"
+            p_str="TCP + UDP"
         else
             p_str="${p_show^^}"
         fi
-        echo -e "${GREEN}[$((i+1))]${PLAIN} 协议: ${YELLOW}${p_str}${PLAIN}  本地: [::]:${r_lport[$i]}  -->  目标: ${r_ip[$i]}:${r_port[$i]}"
+        
+        curr_remark=$(get_realm_remark "${r_lport[$i]}")
+        
+        echo -e "${GREEN}[$((i+1))]${PLAIN} 备注: ${BLUE}${curr_remark}${PLAIN}"
+        echo -e "    协议: ${YELLOW}${p_str}${PLAIN}  本地: [::]:${r_lport[$i]}  -->  目标: ${r_ip[$i]}:${r_port[$i]}"
         echo "" 
     done
     return 0
@@ -288,24 +347,12 @@ delete_realm_rule() {
         echo -e "\n${YELLOW}删除 realm 规则${PLAIN}"
         echo ""
         
-        get_realm_rules
-        if [ ${#r_lport[@]} -eq 0 ]; then
-            echo -e "${YELLOW}目前没有任何规则。${PLAIN}"
+        show_realm_list
+        if [ $? -ne 0 ]; then
             echo ""
             read -p "按回车键继续..."
             return
         fi
-
-        for ((i=0; i<${#r_lport[@]}; i++)); do
-            p_show="${r_proto[$i]}"
-            if [[ "$p_show" == "tcp+udp" ]]; then
-                p_str="TCP+UDP"
-            else
-                p_str="${p_show^^}"
-            fi
-            echo -e "${GREEN}[$((i+1))]${PLAIN} 协议: ${YELLOW}${p_str}${PLAIN}  本地: [::]:${r_lport[$i]}  -->  目标: ${r_ip[$i]}:${r_port[$i]}"
-            echo "" 
-        done
 
         echo "0. 返回上一级"
         echo ""
@@ -323,6 +370,9 @@ delete_realm_rule() {
         fi
         
         idx=$((num-1))
+        
+        del_realm_remark "${r_lport[$idx]}"
+        
         unset r_lport[$idx]
         unset r_ip[$idx]
         unset r_port[$idx]
@@ -364,21 +414,31 @@ edit_realm_rule() {
         fi
         
         idx=$((num-1))
+        old_remark=$(get_realm_remark "${r_lport[$idx]}")
         
         echo -e "正在修改第 ${GREEN}$num${PLAIN} 条规则 (直接回车保持原值):"
         echo ""
         
         read -p "本地监听端口 (当前: ${r_lport[$idx]}): " new_lport
         echo ""
-        # 修改：提示语增加“域名”
         read -p "目标 IP/域名 (当前: ${r_ip[$idx]}): " new_ip
         echo ""
         read -p "目标端口 (当前: ${r_port[$idx]}): " new_port
         echo ""
         
-        echo "协议 (当前: ${r_proto[$idx]})"
+        read -p "备注名称 (当前: $old_remark): " new_remark
         echo ""
-        echo "1. TCP+UDP"
+        
+        curr_proto_raw="${r_proto[$idx]}"
+        if [[ "$curr_proto_raw" == "tcp+udp" ]]; then
+            curr_proto_disp="TCP + UDP"
+        else
+            curr_proto_disp="${curr_proto_raw^^}"
+        fi
+        
+        echo "协议 (当前: $curr_proto_disp)"
+        echo ""
+        echo "1. TCP + UDP"
         echo ""
         echo "2. 仅 TCP"
         echo ""
@@ -403,6 +463,19 @@ edit_realm_rule() {
             *) new_proto="tcp+udp" ;; 
         esac
         
+        if [[ "${r_lport[$idx]}" != "$new_lport" ]]; then
+            del_realm_remark "${r_lport[$idx]}"
+            if [[ -z "$new_remark" && "$old_remark" != "无" ]]; then
+                set_realm_remark "$new_lport" "$old_remark"
+            elif [[ -n "$new_remark" ]]; then
+                set_realm_remark "$new_lport" "$new_remark"
+            fi
+        else
+             if [[ -n "$new_remark" ]]; then
+                set_realm_remark "$new_lport" "$new_remark"
+             fi
+        fi
+
         r_lport[$idx]=$new_lport
         r_ip[$idx]=$new_ip
         r_port[$idx]=$new_port
@@ -418,6 +491,29 @@ edit_realm_rule() {
 
 rebuild_realm_config() {
     > $REALM_CONFIG
+    
+    cat >> $REALM_CONFIG <<EOF
+[dns]
+mode = "ipv4_and_ipv6"
+protocol = "tcp_and_udp"
+nameservers = ["1.1.1.1:53", "1.0.0.1:53"]
+min_ttl = 600
+max_ttl = 3600
+cache_size = 256
+
+[network]
+use_udp = true
+zero_copy = true
+fast_open = false
+tcp_timeout = 300
+udp_timeout = 30
+send_proxy = false
+send_proxy_version = 2
+accept_proxy = false
+accept_proxy_timeout = 5
+
+EOF
+
     for i in "${!r_lport[@]}"; do
         echo "[[endpoints]]" >> $REALM_CONFIG
         echo "listen = \"[::]:${r_lport[$i]}\"" >> $REALM_CONFIG
@@ -444,6 +540,7 @@ uninstall_realm() {
         rm -f $REALM_SERVICE
         rm -f $REALM_PATH
         rm -rf /etc/realm
+        rm -f $REMARK_FILE
         systemctl daemon-reload
         echo ""
         echo -e "${GREEN}realm 已卸载${PLAIN}"
@@ -464,15 +561,14 @@ reset_realm_rules() {
     read -p "确定要清空所有 realm 规则吗？(y/n): " choice
     
     if [[ "$choice" == "y" ]]; then
-        > $REALM_CONFIG
+        rebuild_realm_config
+        > $REMARK_FILE
         systemctl restart realm
-        echo -e "\n${GREEN}realm 规则已清空！${PLAIN}"
+        echo -e "\n${GREEN}realm 规则已清空 (保留全局优化配置)！${PLAIN}"
         echo "" 
         read -p "按回车键继续..."
     fi
 }
-
-# ==================== iptables 功能模块 ====================
 
 install_iptables_env() {
     echo -e "\n${YELLOW}安装/更新 iptables...${PLAIN}\n"
@@ -500,22 +596,22 @@ add_iptables_rule() {
     
     read -p "请输入本地端口: " lport
     echo ""
-    
     read -p "请输入目标 IP: " rip
     echo ""
-    
     read -p "请输入目标端口: " rport
+    echo ""
+    read -p "请输入备注名称: " remarks
     echo ""
     
     echo "请选择转发协议:"
     echo ""
-    echo "1. TCP + UDP (默认)"
+    echo "1. TCP + UDP"
     echo ""
     echo "2. 仅 TCP"
     echo ""
     echo "3. 仅 UDP"
     echo ""
-    read -p "请输入选项 [1-3]: " proto_choice
+    read -p "请输入选项 [1-3 回车默认1]: " proto_choice
     echo "" 
     
     if [[ -z "$proto_choice" ]]; then
@@ -529,13 +625,18 @@ add_iptables_rule() {
         *) proto="both" ;;
     esac
 
+    comment_arg=""
+    if [ -n "$remarks" ]; then
+        comment_arg="-m comment --comment \"$remarks\""
+    fi
+
     if [ "$proto" == "both" ]; then
-        iptables -t nat -A PREROUTING -p tcp --dport $lport -j DNAT --to-destination $rip:$rport
-        iptables -t nat -A PREROUTING -p udp --dport $lport -j DNAT --to-destination $rip:$rport
+        iptables -t nat -A PREROUTING -p tcp --dport $lport -j DNAT --to-destination $rip:$rport $comment_arg
+        iptables -t nat -A PREROUTING -p udp --dport $lport -j DNAT --to-destination $rip:$rport $comment_arg
         iptables -t nat -A POSTROUTING -p tcp -d $rip --dport $rport -j MASQUERADE
         iptables -t nat -A POSTROUTING -p udp -d $rip --dport $rport -j MASQUERADE
     else
-        iptables -t nat -A PREROUTING -p $proto --dport $lport -j DNAT --to-destination $rip:$rport
+        iptables -t nat -A PREROUTING -p $proto --dport $lport -j DNAT --to-destination $rip:$rport $comment_arg
         iptables -t nat -A POSTROUTING -p $proto -d $rip --dport $rport -j MASQUERADE
     fi
 
@@ -545,16 +646,16 @@ add_iptables_rule() {
         service iptables save
     fi
     
-    echo "" # 保存后空行
+    echo ""
     echo -e "${GREEN}iptables 规则已添加并保存！${PLAIN}"
 }
 
 list_iptables_rules() {
     echo -e "\n${YELLOW}当前 iptables 转发规则：${PLAIN}"
+    echo "" 
     iptables -t nat -L PREROUTING --line-numbers
     echo ""
     read -p "按回车键返回..."
-    echo ""
 }
 
 del_iptables_rule() {
@@ -599,7 +700,7 @@ del_iptables_rule() {
         else
             service iptables save
         fi
-        echo "" # 保存后空行
+        echo ""
 
         echo -e "${GREEN}规则序号 $num 已删除并保存！${PLAIN}\n"
         read -p "按回车键继续..."
@@ -645,10 +746,8 @@ uninstall_iptables_service() {
     read -p "确定要卸载 iptables 转发服务吗？(y/n): " choice
     if [[ "$choice" == "y" ]]; then
         echo ""
-        # 先清空规则
         iptables -t nat -F
         
-        # 禁用服务并保存空规则
         if [ -f /etc/debian_version ]; then
             netfilter-persistent save >/dev/null 2>&1
             systemctl stop netfilter-persistent
@@ -666,12 +765,10 @@ uninstall_iptables_service() {
     fi
 }
 
-# ==================== 全局卸载 ====================
-
 uninstall_all() {
     echo ""
     echo -e "${RED}警告：此操作将执行以下所有动作：${PLAIN}"
-    echo "1. 卸载 Realm (删除文件和服务)"
+    echo "1. 卸载 Realm (删除文件、配置、备注和服务)"
     echo "2. 清空 Iptables 转发规则"
     echo "3. 删除本脚本及 'zf' 快捷键"
     echo ""
@@ -702,11 +799,8 @@ uninstall_all() {
     fi
 }
 
-# ==================== 子菜单函数 ====================
-
 manage_realm_menu() {
     while true; do
-        # 删除了 clear
         echo -e "\n${GREEN}===================================================${PLAIN}"
         echo ""
         echo -e "${YELLOW} ---- 管理 realm 规则 ----${PLAIN}"
@@ -737,7 +831,6 @@ manage_realm_menu() {
 
 manage_iptables_menu() {
     while true; do
-        # 删除了 clear
         echo -e "\n${GREEN}===================================================${PLAIN}"
         echo ""
         echo -e "${YELLOW} ---- 管理 iptables 规则 ----${PLAIN}"
@@ -766,13 +859,10 @@ manage_iptables_menu() {
     done
 }
 
-# ==================== 主菜单 ====================
-
 show_menu() {
     check_status
-    # 删除了 clear
     echo ""
-    echo -e "${GREEN}========= 转发脚本 Script v1.0 By Shinyuz =========${PLAIN}"
+    echo -e "${GREEN}========= 转发脚本 Script v1.8 By Shinyuz =========${PLAIN}"
     echo ""
     echo -e " realm: ${realm_status}"
     echo ""
@@ -781,7 +871,6 @@ show_menu() {
     echo -e "${GREEN}===================================================${PLAIN}"
     echo ""
     
-    # Realm 区块
     echo -e "${YELLOW} ---- realm 管理 ------${PLAIN}"
     echo ""
     echo " 1. 添加 realm 转发规则"
@@ -793,7 +882,6 @@ show_menu() {
     echo " 4. 安装/更新 realm"
     echo ""
     
-    # Iptables 区块
     echo -e "${YELLOW} ---- iptables 管理 ----${PLAIN}"
     echo ""
     echo " 5. 添加 iptables 转发规则"
@@ -803,7 +891,6 @@ show_menu() {
     echo " 7. 安装/更新 iptables"
     echo ""
     
-    # 底部区块
     echo "------------------------------"
     echo ""
     echo " 8. 更新"
@@ -822,7 +909,7 @@ show_menu() {
         4) install_realm ;;
         5) add_iptables_rule; echo ""; read -p "按回车键继续..." ;;
         6) manage_iptables_menu ;;
-        7) install_iptables_env ;; # 修正：去掉了暂停
+        7) install_iptables_env ;; 
         8) update_script ;;
         9) uninstall_all ;;
         0) echo ""; exit 0 ;; 
@@ -830,7 +917,6 @@ show_menu() {
     esac
 }
 
-# 入口
 check_root
 set_shortcut
 while true; do
