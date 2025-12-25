@@ -42,7 +42,7 @@
 复制以下命令并在 VPS 终端中执行：
 
 ```bash
-wget -N --no-check-certificate [https://raw.githubusercontent.com/Shinyuz/net-forwarder/main/forwarding.sh](https://raw.githubusercontent.com/Shinyuz/net-forwarder/main/forwarding.sh) && chmod +x forwarding.sh && ./forwarding.sh
+wget -N --no-check-certificate https://raw.githubusercontent.com/Shinyuz/net-forwarder/main/forwarding.sh && chmod +x forwarding.sh && ./forwarding.sh
 ```
 (如果下载失败，请检查 VPS 的网络连接或 DNS 设置)
 
@@ -79,6 +79,7 @@ zf
 1. 本脚本仅供学习交流使用，请勿用于非法用途。
 2. 使用本脚本造成的任何损失（包括但不限于数据丢失、服务器被封锁等），作者不承担任何责任。
 3. 请遵守当地法律法规。
+
 
 
 
