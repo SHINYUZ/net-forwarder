@@ -11,13 +11,13 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 PLAIN='\033[0m'
-BLUE='\033[0;36m' 
+BLUE='\033[0;36m'
 
 # 路径定义
 REALM_PATH="/usr/local/bin/realm"
 REALM_CONFIG="/etc/realm/config.toml"
 REALM_SERVICE="/etc/systemd/system/realm.service"
-REMARK_FILE="/etc/realm/remarks.txt" 
+REMARK_FILE="/etc/realm/remarks.txt"
 SCRIPT_PATH=$(readlink -f "$0")
 
 check_root() {
@@ -925,4 +925,3 @@ set_shortcut
 while true; do
     show_menu
 done
-
