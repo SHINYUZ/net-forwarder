@@ -46,6 +46,8 @@ wget -N --no-check-certificate [https://raw.githubusercontent.com/Shinyuz/net-fo
 ```
 (如果下载失败，请检查 VPS 的网络连接或 DNS 设置)
 
+---
+
 ## 📖 使用指南
 
 安装完成后，你可以通过以下命令随时打开管理菜单：
@@ -53,6 +55,8 @@ wget -N --no-check-certificate [https://raw.githubusercontent.com/Shinyuz/net-fo
 ```bash
 zf
 ```
+
+---
 
 ## 📂 目录结构说明
 
@@ -68,11 +72,14 @@ zf
 | **iptables v6 规则 (CentOS)** | `/etc/sysconfig/ip6tables` | IPv6 规则持久化文件 |
 | **脚本快捷方式** | `/usr/bin/zf` | 快捷启动指令 |
 
+---
+
 ## ⚠️ 免责声明
 
 1. 本脚本仅供学习交流使用，请勿用于非法用途。
 2. 使用本脚本造成的任何损失（包括但不限于数据丢失、服务器被封锁等），作者不承担任何责任。
 3. 请遵守当地法律法规。
+
 
 
 
