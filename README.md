@@ -1,8 +1,8 @@
-# 🚀 Net Forwarder - VPS 流量转发全能脚本
+  # 🚀 Net Forwarder - VPS 流量转发全能脚本
 
 ![License](https://img.shields.io/badge/license-MIT-green) ![Language](https://img.shields.io/badge/language-Bash-blue) ![Platform](https://img.shields.io/badge/platform-Linux-lightgrey)
 
-一个轻量、美观且功能强大的 Linux 流量转发管理脚本。集成 **Realm** (Go语言开发，高效) 与 **iptables** (系统原生) 两种转发方式，支持 TCP/UDP 协议，支持域名解析转发。
+一个轻量、美观且功能强大的 Linux 流量转发管理脚本。集成 **realm** (Go语言开发，高效) 与 **iptables** (系统原生) 两种转发方式，支持 TCP/UDP 协议，支持域名解析转发。
 
 ---
 
@@ -39,4 +39,5 @@
 复制以下命令并在 VPS 终端中执行：
 
 ```bash
+
 wget -N --no-check-certificate [https://raw.githubusercontent.com/Shinyuz/net-forwarder/main/forwarding.sh](https://raw.githubusercontent.com/Shinyuz/net-forwarder/main/forwarding.sh) && chmod +x forwarding.sh && ./forwarding.sh
