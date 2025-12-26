@@ -3,7 +3,7 @@
 # ====================================================
 #  转发脚本 Script v1.7 By Shinyuz
 #  快捷键: zf
-#  更新内容: 增加多源下载重试机制 (解决纯v6无法下载问题)
+#  更新内容: 优化下载逻辑 (解决纯v6环境解析v4失败问题)
 # ====================================================
 
 # 颜色定义
@@ -113,22 +113,29 @@ install_realm() {
     VERSION="v2.7.0"
     FILENAME="realm-$REALM_ARCH.tar.gz"
     
-    # 定义下载源列表：官方源 -> 镜像源1 -> 镜像源2
-    URL_OFFICIAL="https://github.com/zhboner/realm/releases/download/$VERSION/$FILENAME"
+    # 优化镜像源列表：优先使用 Cloudflare 系 (对 IPv6 支持最好)，最后尝试官方
     URL_MIRROR1="https://mirror.ghproxy.com/https://github.com/zhboner/realm/releases/download/$VERSION/$FILENAME"
-    URL_MIRROR2="https://ghproxy.net/https://github.com/zhboner/realm/releases/download/$VERSION/$FILENAME"
+    URL_MIRROR2="https://gh-proxy.com/https://github.com/zhboner/realm/releases/download/$VERSION/$FILENAME"
+    URL_OFFICIAL="https://github.com/zhboner/realm/releases/download/$VERSION/$FILENAME"
     
+    # 使用数组
+    mirrors=("$URL_MIRROR1" "$URL_MIRROR2" "$URL_OFFICIAL")
     DOWNLOAD_SUCCESS=0
 
-    # 尝试下载逻辑
-    for URL in "$URL_OFFICIAL" "$URL_MIRROR1" "$URL_MIRROR2"; do
-        echo -e "尝试下载: $URL"
-        wget -O realm.tar.gz "$URL"
+    for ((i=0; i<${#mirrors[@]}; i++)); do
+        CURRENT_URL="${mirrors[$i]}"
+        echo -e "尝试下载 (镜像源 $((i+1))/${#mirrors[@]}): ..."
+        
+        # -T 15: 超时15秒, -t 2: 重试2次. 避免在死链接上浪费时间
+        wget -T 15 -t 2 -O realm.tar.gz "$CURRENT_URL"
+        
         if [ $? -eq 0 ]; then
             DOWNLOAD_SUCCESS=1
+            echo -e "${GREEN}下载成功！${PLAIN}"
             break
         else
-            echo -e "${RED}下载失败，尝试下一个源...${PLAIN}"
+            echo -e "${RED}当前源下载失败，尝试下一个...${PLAIN}"
+            echo ""
             rm -f realm.tar.gz
         fi
     done
