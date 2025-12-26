@@ -135,9 +135,7 @@ install_realm() {
         USE_MIRROR_FIRST=false
     else
         # 情况B: 获取失败 (IPv6 Only)
-        # ==========================================
-        VERSION="v2.9.2-2" # <--- 已更新为你指定的版本
-        # ==========================================
+        VERSION="v2.9.1" # Realm 的保底版本
         echo -e "${YELLOW}无法连接 GitHub API，切换至保底版本: ${VERSION}${PLAIN}"
         echo ""  # [空行]
         echo -e "网络策略: ${YELLOW}优先镜像源 (IPv6优化)${PLAIN}"
@@ -248,6 +246,7 @@ EOF
     systemctl enable realm
     echo ""
     echo -e "${GREEN}realm 安装完成！${PLAIN}"
+    echo "" 
 }
 
 add_realm_rule() {
@@ -639,7 +638,7 @@ reset_realm_rules() {
 }
 
 install_iptables_env() {
-    echo -e "\n${YELLOW}安装/更新 iptables...${PLAIN}\n"
+    echo -e "${YELLOW}安装/更新 iptables...${PLAIN}\n"
     
     if [ -f /etc/debian_version ]; then
         apt-get update && apt-get install -y iptables iptables-persistent
