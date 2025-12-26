@@ -3,7 +3,7 @@
 # ====================================================
 #  转发脚本 Script v1.7 By Shinyuz
 #  快捷键: zf
-#  更新内容: 细节排版优化 (系统服务提示前增加空行)
+#  更新内容: 极致排版优化 (隐藏多余提示，精准控制空行)
 # ====================================================
 
 # 颜色定义
@@ -108,12 +108,12 @@ del_realm_remark() {
 
 install_realm() {
     check_arch
+    # 这里的 \n 保证了 "正在安装 realm..." 下面只空一行，然后紧接 wget 输出
     echo -e "\n${YELLOW}正在安装 realm...${PLAIN}\n"
     
     VERSION="v2.7.0"
     FILENAME="realm-$REALM_ARCH.tar.gz"
     
-    # 优先使用 gh-proxy.com (对 IPv6 支持最好)
     URL_MIRROR1="https://gh-proxy.com/https://github.com/zhboner/realm/releases/download/$VERSION/$FILENAME"
     URL_MIRROR2="https://mirror.ghproxy.com/https://github.com/zhboner/realm/releases/download/$VERSION/$FILENAME"
     URL_OFFICIAL="https://github.com/zhboner/realm/releases/download/$VERSION/$FILENAME"
@@ -123,7 +123,7 @@ install_realm() {
 
     for ((i=0; i<${#mirrors[@]}; i++)); do
         CURRENT_URL="${mirrors[$i]}"
-        echo -e "尝试下载 (镜像源 $((i+1))/${#mirrors[@]}): ..."
+        # 修改：移除了"尝试下载..."的提示，界面更清爽
         
         wget -T 15 -t 2 -O realm.tar.gz "$CURRENT_URL"
         
@@ -202,7 +202,8 @@ WantedBy=multi-user.target
 EOF
 
     systemctl daemon-reload
-    # 修复：在 enable 输出前增加空行
+    
+    # 修正：在此处添加空行，隔开"下载成功！"和"Created symlink..."
     echo ""
     systemctl enable realm
     
