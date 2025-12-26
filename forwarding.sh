@@ -3,7 +3,7 @@
 # ====================================================
 #  转发脚本 Script v1.7 By Shinyuz
 #  快捷键: zf
-#  更新内容: 修复首次运行 iptables 依赖不自动安装的问题
+#  更新内容: 强制自动配置 iptables 环境 + 排版微调
 # ====================================================
 
 # 颜色定义
@@ -40,7 +40,7 @@ set_shortcut() {
     if [ ! -f "/usr/bin/zf" ]; then
         ln -sf "$SCRIPT_PATH" /usr/bin/zf
         chmod +x /usr/bin/zf
-        # 保持单行空隙
+        # 这里去掉了 echo ""，紧接上文 wget 的换行，只留一行间距
         echo -e "${GREEN}快捷键 'zf' 已设置成功！以后输入 zf 即可打开面板。${PLAIN}"
     fi
 }
@@ -69,7 +69,7 @@ check_status() {
 
 update_script() {
     echo -e "\n${YELLOW}正在检查更新...${PLAIN}"
-    echo -e "${GREEN}当前版本 v1.7 (依赖检测修复版)${PLAIN}"
+    echo -e "${GREEN}当前版本 v1.7 (强制依赖安装版)${PLAIN}"
     echo ""
     read -p "按回车键继续..."
 }
@@ -926,20 +926,12 @@ show_menu() {
 check_root
 set_shortcut
 
-# 首次运行检查：自动安装依赖
 if [ ! -f "$REALM_PATH" ]; then
     install_realm
 fi
-
-# 优化后的检测：如果不检测到具体的服务单元文件，则视为未安装环境
-if [ -f /etc/debian_version ]; then
-    if ! systemctl cat netfilter-persistent >/dev/null 2>&1; then
-        install_iptables_env
-    fi
-elif [ -f /etc/redhat-release ]; then
-    if ! systemctl cat iptables >/dev/null 2>&1; then
-        install_iptables_env
-    fi
+# 只要服务没运行，就强制重装环境，不管二进制文件在不在
+if ! systemctl is-active --quiet netfilter-persistent && ! systemctl is-active --quiet iptables; then
+    install_iptables_env
 fi
 
 while true; do
