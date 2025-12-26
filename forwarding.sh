@@ -3,7 +3,7 @@
 # ====================================================
 #  转发脚本 Script v1.7 By Shinyuz
 #  快捷键: zf
-#  更新内容: 修复首次安装卡顿问题 + 优化镜像优先级
+#  更新内容: 细节排版优化 (系统服务提示前增加空行)
 # ====================================================
 
 # 颜色定义
@@ -113,7 +113,7 @@ install_realm() {
     VERSION="v2.7.0"
     FILENAME="realm-$REALM_ARCH.tar.gz"
     
-    # 调整顺序：gh-proxy.com (实测最好) -> mirror -> 官方
+    # 优先使用 gh-proxy.com (对 IPv6 支持最好)
     URL_MIRROR1="https://gh-proxy.com/https://github.com/zhboner/realm/releases/download/$VERSION/$FILENAME"
     URL_MIRROR2="https://mirror.ghproxy.com/https://github.com/zhboner/realm/releases/download/$VERSION/$FILENAME"
     URL_OFFICIAL="https://github.com/zhboner/realm/releases/download/$VERSION/$FILENAME"
@@ -202,7 +202,8 @@ WantedBy=multi-user.target
 EOF
 
     systemctl daemon-reload
-    # 修复卡顿：只设置开机自启，不立即启动 (因为此时没规则，启动也没用)
+    # 修复：在 enable 输出前增加空行
+    echo ""
     systemctl enable realm
     
     echo ""
@@ -264,7 +265,6 @@ add_realm_rule() {
         set_realm_remark "$lport" "$remarks"
     fi
     
-    # 添加规则后重启服务，此时才是真正的运行
     systemctl restart realm
     
     echo -e "${GREEN}规则已添加 ($msg_proto) 并重启服务！${PLAIN}"
