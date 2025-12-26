@@ -1,6 +1,6 @@
 # 🚀 Net Forwarder - VPS 流量转发脚本
 
-![License](https://img.shields.io/badge/license-GPL--3.0-blue) ![Language](https://img.shields.io/badge/language-Bash-blue) ![Platform](https://img.shields.io/badge/platform-Linux-lightgrey)
+![License](https://img.shields.io/github/license/SHINYUZ/net-forwarder?color=blue) ![Language](https://img.shields.io/badge/language-Bash-green) ![Platform](https://img.shields.io/badge/platform-Linux-lightgrey)
 
 一个轻量、美观且功能强大的 Linux 流量转发管理脚本。集成 **realm** (Go语言开发，高效) 与 **iptables** (系统原生) 两种转发方式，支持 TCP/UDP 协议，支持域名解析转发。
 
@@ -98,5 +98,6 @@ Copyright (c) 2025 Shinyuz
 ---
 
 **如果这个脚本对你有帮助，请给一个 ⭐ Star！**
+
 
 
