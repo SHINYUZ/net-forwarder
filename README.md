@@ -115,8 +115,8 @@ zf
 | **realm 配置文件** | `/etc/realm/config.toml` | 存储转发规则 |
 | **realm 备注文件** | `/etc/realm/remarks.txt` | 存储规则备注信息 |
 | **realm 服务** | `/etc/systemd/system/realm.service` | Systemd 守护进程 |
-| **iptables v4 规则 (Debian)** | `/etc/iptables/rules.v4` | IPv4 规则持久化文件 |
-| **iptables v6 规则 (Debian)** | `/etc/iptables/rules.v6` | IPv6 规则持久化文件 |
+| **iptables v4 规则** | `/etc/iptables/rules.v4` | IPv4 规则持久化文件 |
+| **iptables v6 规则** | `/etc/iptables/rules.v6` | IPv6 规则持久化文件 |
 | **iptables v4 规则 (CentOS)** | `/etc/sysconfig/iptables` | IPv4 规则持久化文件 |
 | **iptables v6 规则 (CentOS)** | `/etc/sysconfig/ip6tables` | IPv6 规则持久化文件 |
 | **脚本快捷方式** | `/usr/bin/zf` | 快捷启动指令 |
@@ -140,6 +140,7 @@ Copyright (c) 2025 Shinyuz
 ---
 
 **如果这个脚本对你有帮助，请给一个 ⭐ Star！**
+
 
 
 
