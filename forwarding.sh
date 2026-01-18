@@ -65,10 +65,17 @@ check_status() {
 }
 
 update_script() {
-    echo -e "\n${YELLOW}正在检查更新...${PLAIN}"
-    echo -e "${GREEN}当前版本 v1.7${PLAIN}"
     echo ""
-    read -p "按回车键继续..."
+    echo -e "${GREEN}正在更新脚本...${PLAIN}"
+    echo ""
+    
+    # 下载 -> 成功后直接打印(无空行) -> 延时 -> 替换进程
+    wget -N --no-check-certificate "https://raw.githubusercontent.com/Shinyuz/net-forwarder/main/forwarding.sh" && chmod +x forwarding.sh && \
+    echo -e "${GREEN}更新成功！正在重启脚本...${PLAIN}" && \
+    sleep 1 && \
+    exec ./forwarding.sh
+    
+    exit 0
 }
 
 init_remark_file() {
@@ -963,9 +970,9 @@ show_menu() {
     
     echo "------------------------------"
     echo ""
-    echo " 8. 更新"
+    echo " 8. 更新脚本"
     echo ""
-    echo " 9. 卸载"
+    echo " 9. 卸载脚本"
     echo ""
     echo " 0. 退出脚本"
     echo ""
